@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from util import *
 
 
-def analyze_binary_classification():
-    binary_result = load_obj(f'binary_result')
+def analyze_binary_classification(ver):
+    binary_result = load_obj(f'binary_result{ver}')
     len_df = pd.DataFrame(binary_result['len'])
     case_den_df = pd.DataFrame(binary_result['case_den'])
 
@@ -25,8 +25,8 @@ def analyze_binary_classification():
     plt.show()
 
 
-def analyze_multiple_choice():
-    mc_result = load_obj(f'mc_result')
+def analyze_multiple_choice(ver):
+    mc_result = load_obj(f'mc_result{ver}')
     len_df = pd.DataFrame(mc_result['len'])
     case_den_df = pd.DataFrame(mc_result['case_den'])
     freq_df = pd.DataFrame(mc_result['freq'])
@@ -48,6 +48,7 @@ def analyze_multiple_choice():
 
 
 if __name__ == '__main__':
+    ver = ''
     sns.set_style('whitegrid')
-    analyze_binary_classification()
-    analyze_multiple_choice()
+    analyze_binary_classification(ver)
+    analyze_multiple_choice(ver)

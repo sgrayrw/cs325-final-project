@@ -239,8 +239,12 @@ def shuffle_preverb_sent(dataset):
 def load_data(regenerate=True):
     print('loading data ...')
     if regenerate:
-        sentences, nonparticle_ratio = parse_file('kyoto-train.ja.pos')
-        random.shuffle(sentences)
+        # sentences, nonparticle_ratio = parse_file('kyoto-train.ja.pos')
+        # random.shuffle(sentences)
+        # save_obj(sentences, 'sentences')
+
+        # load sentences from pickle. uncomment above if need to reload data file.
+        sentences = load_obj('sentences')
         train = sentences[:int(len(sentences) * 0.9)]
         train_x, train_y = prepare_negative_examples(train)
 

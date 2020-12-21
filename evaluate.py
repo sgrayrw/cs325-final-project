@@ -162,6 +162,6 @@ def eval_multiple_choice(ver, num_choice=4):
 
 
 if __name__ == '__main__':
-    ver = ''
+    ver = ''  # specify which model to evaluate. e.g. ver='_original' loads 'model_original'
     eval_binary_classification(ver)
     eval_multiple_choice(ver)
