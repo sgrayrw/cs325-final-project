@@ -1,5 +1,5 @@
 import random
-import numpy as np
+
 from tqdm import tqdm
 
 from util import *
@@ -118,11 +118,6 @@ def prepare_multiple_choice(dataset):
     for i, (v, f) in enumerate(all_verbs.items()):
         verb_idx[v] = (i, f)
         idx_verb[i] = (v, f)
-    save_obj(verb_idx, 'verb_idx')
-    save_obj(idx_verb, 'idx_verb')
-
-    verb_idx = load_obj('verb_idx')
-    idx_verb = load_obj('idx_verb')
 
     def verb_choices(sent):
         verb = tuple(sent[2])

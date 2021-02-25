@@ -1,15 +1,13 @@
-import numpy as np
-from tqdm import tqdm
+import sys
+
 from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import SGD
 
-from util import *
-from Params import Params
 from preprocess import *
 
 
-def extract_feature(sentence, idxdict, use_final_case=True):
+def extract_feature(sentence, idxdict):
     preverb_sent, case_markers, final_verb, final_case_marker = sentence
     '''
     feature vector:
@@ -17,9 +15,7 @@ def extract_feature(sentence, idxdict, use_final_case=True):
     '''
     ngrams = extract_ngrams((preverb_sent, case_markers, final_verb, final_case_marker))
 
-    sections = ['unigrams', 'bigrams', 'case_unigrams', 'case_bigrams']
-    if use_final_case:
-        sections.append('final_case')
+    sections = ['unigrams', 'bigrams', 'case_unigrams', 'case_bigrams', 'final_case']
 
     features = []
     for section in sections:
@@ -50,6 +46,11 @@ def train_model(train_x, train_y, dev_x, dev_y, idxdict, model):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print(f'Usage: {sys.argv[0]} version')
+        exit(1)
+    version = sys.argv[1]
+
     only_generate_data = False
 
     if only_generate_data:
@@ -79,5 +80,5 @@ if __name__ == '__main__':
                                    dev_y[:Params.dev_size],
                                    idxdict,
                                    model))
-        model.save('model')
+        model.save(f'models/model_{version}')
     save_obj(history, 'history')

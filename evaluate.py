@@ -1,5 +1,8 @@
+import sys
+
 from keras.models import load_model
 from sklearn.metrics import confusion_matrix
+
 from preprocess import *
 from train import extract_feature
 
@@ -12,9 +15,9 @@ def verb_freq(question):
     return question[1][0][1]
 
 
-def eval_binary_classification(ver):
+def eval_binary_classification(version):
     data = load_obj('data')
-    model = load_model(f'model{ver}')
+    model = load_model(f'models/model_{version}')
     test_x, test_y = data['test_x'], data['test_y']
 
     binary_result = {}
@@ -45,7 +48,7 @@ def eval_binary_classification(ver):
     probas = np.squeeze(probas)
     y_pred = np.round(probas)
     conf = confusion_matrix(test_y, y_pred)
-    binary_result['len'] = {'lens': lens, 'accs': accs, 'counts': counts}
+    binary_result['len'] = {'val': lens, 'accs': accs, 'counts': counts}
     binary_result['conf'] = conf
 
     test_x, test_y = zip(*sorted(zip(test_x, test_y), key=lambda pair: case_density(pair[0])))
@@ -66,9 +69,9 @@ def eval_binary_classification(ver):
             accs.append(score[1])
             counts.append(len(x_feature))
         case_den += 0.02
-    binary_result['case_den'] = {'dens': dens, 'accs': accs, 'counts': counts}
+    binary_result['case_den'] = {'val': dens, 'accs': accs, 'counts': counts}
 
-    save_obj(binary_result, f'binary_result{ver}')
+    save_obj(binary_result, f'evaluated_result/{version}/binary_result')
 
 
 def predict_questions(model, qs, idxdict, num_choice):
@@ -89,10 +92,10 @@ def predict_questions(model, qs, idxdict, num_choice):
     return correct / (correct + wrong)
 
 
-def eval_multiple_choice(ver, num_choice=4):
+def eval_multiple_choice(version, num_choice=4):
     data = load_obj('data')
     questions = data['questions']
-    model = load_model(f'model{ver}')
+    model = load_model(f'models/model_{version}')
 
     mc_result = {}
 
@@ -114,7 +117,7 @@ def eval_multiple_choice(ver, num_choice=4):
             counts.append(len(qs))
         sent_len += 1
     pbar.close()
-    mc_result['len'] = {'lens': lens, 'accs': accs, 'counts': counts}
+    mc_result['len'] = {'val': lens, 'accs': accs, 'counts': counts}
 
     # case density
     questions.sort(key=lambda q: case_density(q[0]))
@@ -135,7 +138,7 @@ def eval_multiple_choice(ver, num_choice=4):
             counts.append(len(qs))
         case_den += 0.02
     pbar.close()
-    mc_result['case_den'] = {'dens': dens, 'accs': accs, 'counts': counts}
+    mc_result['case_den'] = {'val': dens, 'accs': accs, 'counts': counts}
 
     # verb freq
     questions.sort(key=lambda q: verb_freq(q))
@@ -156,12 +159,16 @@ def eval_multiple_choice(ver, num_choice=4):
             counts.append(len(qs))
         freq += 50
     pbar.close()
-    mc_result['freq'] = {'freqs': freqs, 'accs': accs, 'counts': counts}
+    mc_result['freq'] = {'val': freqs, 'accs': accs, 'counts': counts}
 
-    save_obj(mc_result, f'mc_result{ver}')
+    save_obj(mc_result, f'evaluated_result/{version}/binary_result')
 
 
 if __name__ == '__main__':
-    ver = ''  # specify which model to evaluate. e.g. ver='_original' loads 'model_original'
-    eval_binary_classification(ver)
-    eval_multiple_choice(ver)
+    if len(sys.argv) != 2:
+        print(f'Usage: {sys.argv[0]} version')
+        exit(1)
+    version = sys.argv[1]
+
+    eval_binary_classification(version)
+    eval_multiple_choice(version)
