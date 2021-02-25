@@ -9,7 +9,7 @@ from Params import Params
 from preprocess import *
 
 
-def extract_feature(sentence, idxdict):
+def extract_feature(sentence, idxdict, use_final_case=True):
     preverb_sent, case_markers, final_verb, final_case_marker = sentence
     '''
     feature vector:
@@ -17,8 +17,12 @@ def extract_feature(sentence, idxdict):
     '''
     ngrams = extract_ngrams((preverb_sent, case_markers, final_verb, final_case_marker))
 
+    sections = ['unigrams', 'bigrams', 'case_unigrams', 'case_bigrams']
+    if use_final_case:
+        sections.append('final_case')
+
     features = []
-    for section in ['unigrams', 'bigrams', 'case_unigrams', 'case_bigrams']:
+    for section in sections:
         d = idxdict[section]
         v = np.zeros(len(d))
         for item in ngrams[section]:
@@ -46,12 +50,17 @@ def train_model(train_x, train_y, dev_x, dev_y, idxdict, model):
 
 
 if __name__ == '__main__':
+    only_generate_data = False
+
+    if only_generate_data:
+        data = load_data(True)
+        exit()
+
     data = load_data()
     x, y, idxdict = data['train_x'], data['train_y'], data['idxdict']
 
     split = int(len(x) / 9 * 8)
     train_x, train_y = x[:split], y[:split]
-    shuffle_preverb_sent(train_x)
     dev_x, dev_y = x[split:], y[split:]
 
     feature_len = len(extract_feature(train_x[0], idxdict))
@@ -70,5 +79,5 @@ if __name__ == '__main__':
                                    dev_y[:Params.dev_size],
                                    idxdict,
                                    model))
+        model.save('model')
     save_obj(history, 'history')
-    model.save('model')

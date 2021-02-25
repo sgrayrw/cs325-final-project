@@ -27,7 +27,8 @@ def freqdict_to_inxdict(freqdict):
         'unigrams': Params.feature_unigram_limit,
         'bigrams': Params.feature_bigram_limit,
         'case_unigrams': float('inf'),
-        'case_bigrams': float('inf')
+        'case_bigrams': float('inf'),
+        'final_case': float('inf')
     }
 
     for k, d in freqdict.items():

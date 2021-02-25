@@ -165,8 +165,8 @@ def prepare_multiple_choice(dataset):
 
 
 def extract_ngrams(sentence):
-    preverb_sent, case_markers, final_verb, _ = sentence
-    unigrams, bigrams, case_unigrams, case_bigrams = [], [], [], []
+    preverb_sent, case_markers, final_verb, final_case_marker = sentence
+    unigrams, bigrams, case_unigrams, case_bigrams, final_case = [], [], [], [], []
 
     '''
         {谷崎 潤一郎 は 数寄屋 を} (C) x {好 ん だ} (A):
@@ -199,24 +199,28 @@ def extract_ngrams(sentence):
             case_bigrams.append((last_c, c))
         last_c = c
 
+    # final case marker
+    final_case.append(final_case_marker[0])
+
     return {
         'unigrams': unigrams,
         'bigrams': bigrams,
         'case_unigrams': case_unigrams,
-        'case_bigrams': case_bigrams
+        'case_bigrams': case_bigrams,
+        'final_case': final_case
     }
 
 
 def count_ngrams(sentences):
-    freqdict = {d: defaultdict(int) for d in ['unigrams', 'bigrams', 'case_unigrams', 'case_bigrams']}
+    freqdict = {d: defaultdict(int) for d in ['unigrams', 'bigrams', 'case_unigrams', 'case_bigrams', 'final_case']}
 
     '''
     {谷崎 潤一郎 は 数寄屋 を} (C) x {好 ん だ} (A):
         谷崎_好, 潤一郎_好 ... -> 1
         谷崎_X, 潤一郎_Y ... -> 0
     '''
-    for preverb_sent, case_markers, final_verb, _ in tqdm(sentences, 'counting ngrams'):
-        ngrams = extract_ngrams((preverb_sent, case_markers, final_verb, _))
+    for preverb_sent, case_markers, final_verb, final_case_marker in tqdm(sentences, 'counting ngrams'):
+        ngrams = extract_ngrams((preverb_sent, case_markers, final_verb, final_case_marker))
         for ngram, l in ngrams.items():
             for item in l:
                 freqdict[ngram][item] += 1
@@ -236,7 +240,7 @@ def shuffle_preverb_sent(dataset):
         dataset[i] = (preverb_sent, case_markers, final_verb, final_case_marker)
 
 
-def load_data(regenerate=True):
+def load_data(regenerate=False):
     print('loading data ...')
     if regenerate:
         # sentences, nonparticle_ratio = parse_file('kyoto-train.ja.pos')
