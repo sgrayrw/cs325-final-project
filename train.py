@@ -28,7 +28,7 @@ def extract_feature(sentence, idxdict):
     return np.concatenate(features)
 
 
-def train_model(train_x, train_y, dev_x, dev_y, idxdict, model):
+def train_model(train_x, train_y, dev_x, dev_y, idxdict, model, version):
     x_feature = []
     dev_x_feature = []
     for example in train_x:
@@ -37,12 +37,11 @@ def train_model(train_x, train_y, dev_x, dev_y, idxdict, model):
         dev_x_feature.append(extract_feature(example, idxdict))
     x_feature = np.vstack(x_feature)
     dev_x_feature = np.vstack(dev_x_feature)
-    return model.fit(x_feature,
-                     train_y,
-                     batch_size=Params.batch_size,
-                     epochs=Params.epochs,
-                     verbose=2,
-                     validation_data=(dev_x_feature, dev_y)).history
+    model.fit(x_feature, train_y,
+              batch_size=Params.batch_size,
+              epochs=Params.epochs, verbose=2,
+              validation_data=(dev_x_feature, dev_y))
+    model.save(f'models/model_{version}')
 
 
 if __name__ == '__main__':
@@ -72,13 +71,12 @@ if __name__ == '__main__':
                   optimizer=SGD(lr=Params.lr),
                   metrics=['accuracy'])
 
-    history = []
     for i in tqdm(range(0, len(train_x), Params.train_batch_size)):
-        history.append(train_model(train_x[i: i + Params.train_batch_size],
-                                   train_y[i: i + Params.train_batch_size],
-                                   dev_x[:Params.dev_size],
-                                   dev_y[:Params.dev_size],
-                                   idxdict,
-                                   model))
-        model.save(f'models/model_{version}')
-    save_obj(history, 'history')
+        train_model(train_x[i: i + Params.train_batch_size],
+                    train_y[i: i + Params.train_batch_size],
+                    dev_x[:Params.dev_size],
+                    dev_y[:Params.dev_size],
+                    idxdict,
+                    model,
+                    version)
+

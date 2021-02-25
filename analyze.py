@@ -3,7 +3,7 @@ import pandas as pd
 from util import *
 
 
-def plot_result(result, metrics):
+def plot_result(result, metrics, figname):
     for metric, label in metrics.items():
         for version, d in result.items():
             df = pd.DataFrame(d[metric])
@@ -12,6 +12,7 @@ def plot_result(result, metrics):
         plt.ylabel('Accuracy')
         plt.legend()
         plt.show()
+        plt.savefig(f'fig/{figname}_{label}')
 
 
 def analyze_binary_classification(result):
@@ -19,7 +20,7 @@ def analyze_binary_classification(result):
         'len': 'Pre-verb sentence length',
         'case_den': 'Case marker density',
     }
-    plot_result(result, metrics)
+    plot_result(result, metrics, 'binary_result')
 
 
 def analyze_multiple_choice(result):
@@ -28,7 +29,7 @@ def analyze_multiple_choice(result):
         'case_den': 'Case marker density',
         'freq': 'Verb frequency'
     }
-    plot_result(result, metrics)
+    plot_result(result, metrics, 'mc_result')
 
 
 if __name__ == '__main__':
