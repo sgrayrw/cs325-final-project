@@ -38,7 +38,7 @@ if __name__ == '__main__':
     for result_version in os.listdir('pickle/evaluated_result'):
         folder = os.path.realpath(result_version)
         binary_result[result_version] = load_obj(f'evaluated_result/{result_version}/binary_result')
-        # mc_result[result_version] = load_obj(f'evaluated_result/{result_version}/mc_result')
+        mc_result[result_version] = load_obj(f'evaluated_result/{result_version}/mc_result')
 
     analyze_binary_classification(binary_result)
-    # analyze_multiple_choice(mc_result)
+    analyze_multiple_choice(mc_result)

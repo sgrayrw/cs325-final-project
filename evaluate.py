@@ -161,7 +161,7 @@ def eval_multiple_choice(version, num_choice=4):
     pbar.close()
     mc_result['freq'] = {'val': freqs, 'accs': accs, 'counts': counts}
 
-    save_obj(mc_result, f'evaluated_result/{version}/binary_result')
+    save_obj(mc_result, f'evaluated_result/{version}/mc_result')
 
 
 if __name__ == '__main__':
