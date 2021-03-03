@@ -35,11 +35,14 @@ def analyze_multiple_choice(result):
 if __name__ == '__main__':
     sns.set_style('whitegrid')
 
-    binary_result, mc_result = {}, {}
-    for result_version in os.listdir('pickle/evaluated_result'):
-        folder = os.path.realpath(result_version)
-        binary_result[result_version] = load_obj(f'evaluated_result/{result_version}/binary_result')
-        mc_result[result_version] = load_obj(f'evaluated_result/{result_version}/mc_result')
+    # binary_result, mc_result = {}, {}
+    # for result_version in os.listdir('pickle/evaluated_result'):
+    #     folder = os.path.realpath(result_version)
+    #     binary_result[result_version] = load_obj(f'evaluated_result/{result_version}/binary_result')
+    #     mc_result[result_version] = load_obj(f'evaluated_result/{result_version}/mc_result')
+    #
+    # analyze_binary_classification(binary_result)
+    # analyze_multiple_choice(mc_result)
 
-    analyze_binary_classification(binary_result)
-    analyze_multiple_choice(mc_result)
+    result = load_obj('evaluated_result/original/binary_percent_result')
+    plot_result({'original': result}, {'percent_revealed': 'Percentage revealed'}, 'percent_revealed')

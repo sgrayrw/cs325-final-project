@@ -174,6 +174,7 @@ def eval_binary_revealed(version, num_buckets=5):
     sent_len = 1
     i = 0
     percent_revealed, counts, accs = [], [], []
+    pbar = tqdm(total=len(test_x), desc='binary percent revealed')
     while i < len(test_x):
         x_feature = [[] for _ in range(num_buckets)]
         y = [[] for _ in range(num_buckets)]
@@ -190,13 +191,14 @@ def eval_binary_revealed(version, num_buckets=5):
                     x_feature[bucket].append(feature)
                     y[bucket].append(test_y[i])
             i += 1
+            pbar.update()
 
         if not empty:
-            for i in range(num_buckets):
-                features = np.vstack(x_feature[i])
-                labels = np.array(y[i])
+            for bucket in range(num_buckets):
+                features = np.vstack(x_feature[bucket])
+                labels = np.array(y[bucket])
                 acc = model.evaluate(features, labels, verbose=0)[1]
-                percent_revealed.append((i + 1) * 1 / num_buckets)
+                percent_revealed.append((bucket + 1) * 1 / num_buckets)
                 counts.append(len(features))
                 accs.append(acc)
 
