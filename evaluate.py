@@ -164,11 +164,54 @@ def eval_multiple_choice(version, num_choice=4):
     save_obj(mc_result, f'evaluated_result/{version}/mc_result')
 
 
+def eval_binary_revealed(version, num_buckets=5):
+    data = load_obj('data')
+    model = load_model(f'models/model_{version}')
+    test_x, test_y = data['test_x'], data['test_y']
+
+    binary_result = {}
+
+    sent_len = 1
+    i = 0
+    percent_revealed, counts, accs = [], [], []
+    while i < len(test_x):
+        x_feature = [[] for _ in range(num_buckets)]
+        y = [[] for _ in range(num_buckets)]
+
+        empty = True
+        while i < len(test_x) and len(test_x[i][0]) <= sent_len:
+            if num_buckets <= len(test_x[i][0]):
+                empty = False
+                sent = test_x[i]
+                chop_len = len(sent[0]) // num_buckets
+                for bucket in range(num_buckets):
+                    preverb = sent[0][:chop_len * (1 + bucket)]
+                    feature = extract_feature((preverb, sent[1], sent[2], sent[3]), data['idxdict'])
+                    x_feature[bucket].append(feature)
+                    y[bucket].append(test_y[i])
+            i += 1
+
+        if not empty:
+            for i in range(num_buckets):
+                features = np.vstack(x_feature[i])
+                labels = np.array(y[i])
+                acc = model.evaluate(features, labels, verbose=0)[1]
+                percent_revealed.append((i + 1) * 1 / num_buckets)
+                counts.append(len(features))
+                accs.append(acc)
+
+        sent_len += 1
+
+    binary_result['percent_revealed'] = {'val': percent_revealed, 'accs': accs, 'counts': counts}
+    save_obj(binary_result, f'evaluated_result/{version}/binary_percent_result')
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print(f'Usage: {sys.argv[0]} version')
         exit(1)
     version = sys.argv[1]
 
-    eval_binary_classification(version)
-    eval_multiple_choice(version)
+    # eval_binary_classification(version)
+    # eval_multiple_choice(version)
+    eval_binary_revealed(version)
