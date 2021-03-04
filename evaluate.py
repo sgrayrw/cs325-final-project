@@ -198,14 +198,53 @@ def eval_binary_revealed(version, num_buckets=5):
                 features = np.vstack(x_feature[bucket])
                 labels = np.array(y[bucket])
                 acc = model.evaluate(features, labels, verbose=0)[1]
+                accs.append(acc)
                 percent_revealed.append((bucket + 1) * 1 / num_buckets)
                 counts.append(len(features))
-                accs.append(acc)
 
         sent_len += 1
 
     binary_result['percent_revealed'] = {'val': percent_revealed, 'accs': accs, 'counts': counts}
     save_obj(binary_result, f'evaluated_result/{version}/binary_percent_result')
+
+
+def eval_mc_revealed(version, num_choice=4, num_buckets=5):
+    data = load_obj('data')
+    questions = data['questions']
+    model = load_model(f'models/model_{version}')
+
+    mc_result = {}
+
+    sent_len = 1
+    i = 0
+    percent_revealed, counts, accs = [], [], []
+    pbar = tqdm(total=len(questions), desc='mc percent revealed')
+    while i < len(questions):
+        qs = [[] for _ in range(num_buckets)]
+        empty = True
+        while i < len(questions) and len(questions[i][0][0]) <= sent_len:
+            if num_buckets <= len(questions[i][0][0]):
+                empty = False
+                sent = questions[i][0]
+                chop_len = len(sent[0]) // num_buckets
+                for bucket in range(num_buckets):
+                    preverb = sent[0][:chop_len * (1 + bucket)]
+                    sent_new = (preverb, sent[1], sent[2], sent[3])
+                    qs[bucket].append((sent_new, questions[i][1]))
+            i += 1
+            pbar.update()
+
+        if not empty:
+            for bucket in range(num_buckets):
+                acc = predict_questions(model, qs[bucket], data['idxdict'], num_choice)
+                accs.append(acc)
+                percent_revealed.append((bucket + 1) * 1 / num_buckets)
+                counts.append(len(qs[bucket]))
+
+        sent_len += 1
+
+    mc_result['percent_revealed'] = {'val': percent_revealed, 'accs': accs, 'counts': counts}
+    save_obj(mc_result, f'evaluated_result/{version}/mc_percent_result')
 
 
 if __name__ == '__main__':
@@ -216,4 +255,5 @@ if __name__ == '__main__':
 
     # eval_binary_classification(version)
     # eval_multiple_choice(version)
-    eval_binary_revealed(version)
+    # eval_binary_revealed(version)
+    eval_mc_revealed(version)
