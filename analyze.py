@@ -51,7 +51,7 @@ if __name__ == '__main__':
     analyze_binary_classification(binary_result)
     analyze_multiple_choice(mc_result)
 
-    binary_result = {'original': load_obj('evaluated_result/original/binary_percent_result')}
-    analyze_binary_classification(binary_result)
-    mc_result = {'original': load_obj('evaluated_result/original/mc_percent_result')}
-    analyze_multiple_choice(mc_result)
+    # binary_result = {'original': load_obj('evaluated_result/original/binary_percent_result')}
+    # analyze_binary_classification(binary_result)
+    # mc_result = {'original': load_obj('evaluated_result/original/mc_percent_result')}
+    # analyze_multiple_choice(mc_result)

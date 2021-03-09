@@ -225,15 +225,32 @@ def count_ngrams(sentences):
     return freqdict
 
 
-def shuffle_preverb_sent(dataset):
-    for i, sent in tqdm(enumerate(dataset), desc='shuffling preverb sent'):
-        preverb_sent, case_markers, final_verb, final_case_marker = sent
-        if i % 2 == 0:
-            random.shuffle(preverb_sent)
-        else:
-            preverb_sent = dataset[i - 1][0]
-        dataset[i] = (preverb_sent, case_markers, final_verb, final_case_marker)
+# return a new set of sentences:
+'''
+original: 
+S1 -> V1t
+S1 -> V1f
 
+new set:
+S1 -> V1t
+S1_shuffle -> V1t
+S1 -> V1f
+S1_shuffle -> V1f   (same shuffling order)
+'''
+def shuffle_preverb_sent(xs, ys):
+    new_xs, new_ys = [], []
+    for i, sent in tqdm(enumerate(xs), desc='shuffling preverb sent'):
+        new_xs.append(sent)
+        new_ys.append(ys[i])
+        preverb_sent, case_markers, final_verb, final_case_marker = sent
+        preverb_sent_shuffle = preverb_sent.copy()
+        if i % 2 == 0:
+            random.shuffle(preverb_sent_shuffle)
+        else:
+            preverb_sent_shuffle = new_xs[-2][0] # look 2 ahead to follow the same shuffling order
+        new_xs.append((preverb_sent_shuffle, case_markers, final_verb, final_case_marker))
+        new_ys.append(ys[i])
+    return new_xs, new_ys
 
 def load_data(regenerate=False):
     print('loading data ...')

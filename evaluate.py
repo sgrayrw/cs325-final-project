@@ -253,7 +253,7 @@ if __name__ == '__main__':
         exit(1)
     version = sys.argv[1]
 
-    # eval_binary_classification(version)
-    # eval_multiple_choice(version)
+    eval_binary_classification(version)
+    eval_multiple_choice(version)
     # eval_binary_revealed(version)
-    eval_mc_revealed(version)
+    # eval_mc_revealed(version)
