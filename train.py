@@ -57,20 +57,15 @@ if __name__ == '__main__':
         exit(1)
     version = sys.argv[1]
 
-    only_generate_data = False
+    # load data
+    train_x = load_obj('train_x')
+    train_y = load_obj('train_y')
+    dev_x = load_obj('dev_x')
+    dev_y = load_obj('dev_y')
+    idxdict = load_obj('idxdict')
 
-    if only_generate_data:
-        data = load_data(True)
-        exit()
-
-    data = load_data()
-    x, y, idxdict = data['train_x'], data['train_y'], data['idxdict']
-
-    split = int(len(x) / 9 * 8)
-    train_x, train_y = x[:split], y[:split]
-    dev_x, dev_y = x[split:], y[split:]
-
-    train_x, train_y = shuffle_preverb_sent(train_x, train_y)
+    # uncomment below for shuffling
+    # train_x, train_y = shuffle_preverb_sent(train_x, train_y)
 
     feature_len = len(extract_feature(train_x[0], idxdict))
 

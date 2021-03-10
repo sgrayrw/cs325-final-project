@@ -1,5 +1,7 @@
 import random
 
+import pandas as pd
+from keras.preprocessing import sequence
 from tqdm import tqdm
 
 from util import *
@@ -78,12 +80,7 @@ def parse_file(filename, ignore_nonparticle=True):
         return sentences, nonparticle_ratio
 
 
-def prepare_negative_examples(dataset):
-    all_verbs = defaultdict(int)
-    for _, _, final_verb, _ in dataset:
-        all_verbs[tuple(final_verb)] += 1
-    all_verbs = sort_dict(all_verbs)
-
+def prepare_negative_examples(dataset, all_verbs):
     i = 0
     pool = []
     for v in all_verbs:
@@ -106,13 +103,7 @@ def prepare_negative_examples(dataset):
     return x, np.array(y)
 
 
-def prepare_multiple_choice(dataset):
-    sentences = load_obj('sentences')
-    all_verbs = defaultdict(int)
-    for _, _, final_verb, _ in sentences:
-        all_verbs[tuple(final_verb)] += 1
-    all_verbs = sort_dict(all_verbs)
-
+def prepare_multiple_choice(dataset, all_verbs):
     verb_idx = {}
     idx_verb = {}
     for i, (v, f) in enumerate(all_verbs.items()):
@@ -154,9 +145,17 @@ def prepare_multiple_choice(dataset):
         return True
 
     questions = []
-    for example in tqdm(dataset):
+    for example in tqdm(dataset, 'preparing multiple choice'):
         questions.append((example, verb_choices(example)))
     return questions
+
+
+def index_all_verbs(sentences):
+    all_verbs = defaultdict(int)
+    for _, _, final_verb, _ in sentences:
+        all_verbs[tuple(final_verb)] += 1
+    all_verbs = sort_dict(all_verbs)
+    return all_verbs
 
 
 def extract_ngrams(sentence):
@@ -247,36 +246,139 @@ def shuffle_preverb_sent(xs, ys):
         if i % 2 == 0:
             random.shuffle(preverb_sent_shuffle)
         else:
-            preverb_sent_shuffle = new_xs[-2][0] # look 2 ahead to follow the same shuffling order
+            preverb_sent_shuffle = new_xs[-2][0]  # look 2 ahead to follow the same shuffling order
         new_xs.append((preverb_sent_shuffle, case_markers, final_verb, final_case_marker))
         new_ys.append(ys[i])
     return new_xs, new_ys
 
-def load_data(regenerate=False):
-    print('loading data ...')
-    if regenerate:
-        # sentences, nonparticle_ratio = parse_file('kyoto-train.ja.pos')
-        # random.shuffle(sentences)
-        # save_obj(sentences, 'sentences')
 
-        # load sentences from pickle. uncomment above if need to reload data file.
-        sentences = load_obj('sentences')
-        train = sentences[:int(len(sentences) * 0.9)]
-        train_x, train_y = prepare_negative_examples(train)
+def generate_data(reload_data_file=False):
+    print('generating data ...')
 
-        test = sentences[int(len(sentences) * 0.9):]
-        test.sort(key=lambda s: len(s[0]))
-        test_x, test_y = prepare_negative_examples(test)
-        questions = prepare_multiple_choice(test)
-
-        freqdict = count_ngrams(train_x)
-        idxdict = freqdict_to_inxdict(freqdict)
-
-        data = {'train_x': train_x, 'train_y': train_y,
-                'test_x': test_x, 'test_y': test_y, 'questions': questions,
-                'freqdict': freqdict, 'idxdict': idxdict}
-        save_obj(data, 'data')
+    # parse from data file
+    if reload_data_file:
+        sentences, nonparticle_ratio = parse_file('kyoto-train.ja.pos')
+        random.shuffle(sentences)
+        save_obj(sentences, 'sentences')
     else:
-        data = load_obj('data')
+        sentences = load_obj('sentences')
 
-    return data
+    # train, dev, test - 8:1:1
+    all_verbs = index_all_verbs(sentences)
+    # TODO: where should we sample negative verbs?
+    length = len(sentences)
+    train = sentences[:int(length * 0.8)]
+    dev = sentences[int(length * 0.8): int(length * 0.9)]
+    test = sentences[int(length * 0.9):]
+    test.sort(key=lambda s: len(s[0]))  # evaluate.py assumes test is sorted by length asc
+
+    # prepare negative verbs and multiple choice
+    train_x, train_y = prepare_negative_examples(train, all_verbs)
+    dev_x, dev_y = prepare_negative_examples(dev, all_verbs)
+    test_x, test_y = prepare_negative_examples(test, all_verbs)
+    questions = prepare_multiple_choice(test, all_verbs)
+
+    # generate indexes for one-hot encoding
+    freqdict = count_ngrams(train_x)
+    idxdict = freqdict_to_inxdict(freqdict)
+
+    # save data
+    save_obj(train_x, 'logreg/train_x')
+    save_obj(train_y, 'logreg/train_y')
+    save_obj(dev_x, 'logreg/dev_x')
+    save_obj(dev_y, 'logreg/dev_y')
+    save_obj(test_x, 'logreg/test_x')
+    save_obj(test_y, 'logreg/test_y')
+    save_obj(questions, 'logreg/questions')
+    save_obj(idxdict, 'logreg/idxdict')
+
+
+def generate_lstm_data():
+    sentences = load_obj('sentences')
+
+    # index all characters
+    all_chars = defaultdict(int)
+    all_length = []
+    for preverb, _, final_verb, _ in tqdm(sentences, 'Indexing all characters'):
+        preverb_str = ''.join(preverb)
+        final_verb_str = ''.join(final_verb)
+        sent_str = preverb_str + final_verb_str
+        all_length.append(len(sent_str))
+        for char in sent_str:
+            all_chars[char] += 1
+    all_chars = sort_dict(all_chars)
+
+    char_idx = {}
+    for i, char in enumerate(all_chars):
+        char_idx[char] = i
+
+    # describe sent length - so we have an idea what the maxlen of a sequence should be
+    print('Stat on sentence length:')
+    print(pd.Series(all_length).describe())
+
+    # convert data to sequences
+    print('converting data into sequences...')
+    train_x = load_obj('logreg/train_x')
+    train_y = load_obj('logreg/train_y')
+    dev_x = load_obj('logreg/dev_x')
+    dev_y = load_obj('logreg/dev_y')
+    test_x = load_obj('logreg/test_x')
+    test_y = load_obj('logreg/test_y')
+    questions = load_obj('logreg/questions')
+
+    train_x = convert_sequence(train_x, char_idx)
+    dev_x = convert_sequence(dev_x, char_idx)
+    test_x = convert_sequence(test_x, char_idx)
+    questions = convert_sequence_questions(questions, char_idx)
+
+    # pad sequences
+    print('padding sequences...')
+    train_x = sequence.pad_sequences(train_x, maxlen=Params.lstm_maxlen)
+    dev_x = sequence.pad_sequences(dev_x, maxlen=Params.lstm_maxlen)
+    test_x = sequence.pad_sequences(test_x, maxlen=Params.lstm_maxlen)
+    for i in range(len(questions)):
+        questions[i] = sequence.pad_sequences(questions[i], maxlen=Params.lstm_maxlen)
+
+    # save data
+    save_obj(train_x, 'lstm/train_x')
+    save_obj(train_y, 'lstm/train_y')
+    save_obj(dev_x, 'lstm/dev_x')
+    save_obj(dev_y, 'lstm/dev_y')
+    save_obj(test_x, 'lstm/test_x')
+    save_obj(test_y, 'lstm/test_y')
+    save_obj(questions, 'lstm/questions')
+
+
+# turn each sentence in a dataset into a sequence
+def convert_sequence(dataset, char_idx):
+    result = []
+    for preverb, _, final_verb, _ in tqdm(dataset):
+        preverb_str = ''.join(preverb)
+        final_verb_str = ''.join(final_verb)
+        sent_str = preverb_str + final_verb_str
+        char_seq = []
+        for char in sent_str:
+            char_seq.append(char_idx[char])
+        result.append(char_seq)
+    return np.array(result)
+
+
+def convert_sequence_questions(questions, char_idx):
+    result = []
+    for sent, verb_choices in questions:
+        preverb_str = ''.join(sent[0])
+        candidate_sents = []
+        for verb in verb_choices:
+            final_verb_str = ''.join(verb[0])
+            sent_str = preverb_str + final_verb_str
+            char_seq = []
+            for char in sent_str:
+                char_seq.append(char_idx[char])
+            candidate_sents.append(char_seq)
+        result.append(np.array(candidate_sents))
+    return result
+
+
+if __name__ == '__main__':
+    # generate_data(False)
+    generate_lstm_data()
