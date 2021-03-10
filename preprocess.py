@@ -340,6 +340,7 @@ def generate_lstm_data():
         questions[i] = sequence.pad_sequences(questions[i], maxlen=Params.lstm_maxlen)
 
     # save data
+    print('saving data...')
     save_obj(train_x, 'lstm/train_x')
     save_obj(train_y, 'lstm/train_y')
     save_obj(dev_x, 'lstm/dev_x')
@@ -347,6 +348,7 @@ def generate_lstm_data():
     save_obj(test_x, 'lstm/test_x')
     save_obj(test_y, 'lstm/test_y')
     save_obj(questions, 'lstm/questions')
+    save_obj(len(char_idx), 'lstm/num_features')
 
 
 # turn each sentence in a dataset into a sequence
