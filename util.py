@@ -2,6 +2,7 @@ import os
 import pickle
 from collections import defaultdict
 
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -20,6 +21,17 @@ def load_obj(name):
     filename = 'pickle/' + name + '.pkl'
     with open(filename, 'rb') as f:
         return pickle.load(f)
+
+
+def save_hist(hist, version):
+    hist_df = pd.DataFrame(hist.history)
+    hist_json = f'history/{version}.json'
+    with open(hist_json, mode='w') as f:
+        hist_df.to_json(f)
+
+def load_hist(version):
+    with open(f'history{version}.json') as f:
+        return pd.read_json(f)
 
 
 def sort_dict(d):

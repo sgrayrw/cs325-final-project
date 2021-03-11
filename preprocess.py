@@ -326,9 +326,9 @@ def generate_lstm_data():
     test_y = load_obj('logreg/test_y')
     questions = load_obj('logreg/questions')
 
-    train_x = convert_sequence(train_x, char_idx)
-    dev_x = convert_sequence(dev_x, char_idx)
-    test_x = convert_sequence(test_x, char_idx)
+    train_x = convert_sequence_dataset(train_x, char_idx)
+    dev_x = convert_sequence_dataset(dev_x, char_idx)
+    test_x = convert_sequence_dataset(test_x, char_idx)
     questions = convert_sequence_questions(questions, char_idx)
 
     # pad sequences
@@ -348,35 +348,36 @@ def generate_lstm_data():
     save_obj(test_x, 'lstm/test_x')
     save_obj(test_y, 'lstm/test_y')
     save_obj(questions, 'lstm/questions')
+    save_obj(char_idx, 'lstm/char_idx')
     save_obj(len(char_idx), 'lstm/num_features')
 
 
-# turn each sentence in a dataset into a sequence
-def convert_sequence(dataset, char_idx):
+# turn sentence into a sequence
+def convert_sequence(sentence, char_idx):
+    preverb, _, final_verb, _ = sentence
+    preverb_str = ''.join(preverb)
+    final_verb_str = ''.join(final_verb)
+    sent_str = preverb_str + final_verb_str
+    char_seq = []
+    for char in sent_str:
+        char_seq.append(char_idx[char])
+    return char_seq
+
+
+def convert_sequence_dataset(dataset, char_idx):
     result = []
-    for preverb, _, final_verb, _ in tqdm(dataset):
-        preverb_str = ''.join(preverb)
-        final_verb_str = ''.join(final_verb)
-        sent_str = preverb_str + final_verb_str
-        char_seq = []
-        for char in sent_str:
-            char_seq.append(char_idx[char])
-        result.append(char_seq)
+    for sent in tqdm(dataset):
+        result.append(convert_sequence(sent, char_idx))
     return np.array(result)
 
 
 def convert_sequence_questions(questions, char_idx):
     result = []
     for sent, verb_choices in questions:
-        preverb_str = ''.join(sent[0])
         candidate_sents = []
         for verb in verb_choices:
-            final_verb_str = ''.join(verb[0])
-            sent_str = preverb_str + final_verb_str
-            char_seq = []
-            for char in sent_str:
-                char_seq.append(char_idx[char])
-            candidate_sents.append(char_seq)
+            sent = (sent[0], sent[1], verb[0], sent[3])
+            candidate_sents.append(convert_sequence(sent, char_idx))
         result.append(np.array(candidate_sents))
     return result
 

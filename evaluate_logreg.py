@@ -4,7 +4,7 @@ from keras.models import load_model
 from sklearn.metrics import confusion_matrix
 
 from preprocess import *
-from train import extract_feature
+from train_logreg import extract_feature
 
 
 def case_density(sent):

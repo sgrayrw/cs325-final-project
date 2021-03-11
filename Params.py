@@ -7,3 +7,5 @@ class Params:
     dev_size = 1000
     feature_unigram_limit = 5000
     feature_bigram_limit = 10000
+
+    lstm_maxlen = 60
