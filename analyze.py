@@ -23,6 +23,7 @@ def plot_result(result, figname):
 
                 sns.regplot(data=df, x='val', y='accs', ci=None, scatter_kws={'s': np.log(df['counts']) * 4}, label=version)
         if plot:
+            plt.title(f'{figname}: {label}')
             plt.xlabel(label)
             plt.ylabel('Accuracy')
             plt.legend()
@@ -38,6 +39,18 @@ def analyze_multiple_choice(result):
     plot_result(result, 'mc_result')
 
 
+def analyze_history(version):
+    df = load_hist(version)
+    df['epoch'] = df.index
+
+    fig, axes = plt.subplots(nrows=2, ncols=2)
+    df.plot(x='epoch', y='loss', ax=axes[0, 0])
+    df.plot(x='epoch', y='accuracy', ax=axes[1, 0])
+    df.plot(x='epoch', y='val_loss', ax=axes[0, 1])
+    df.plot(x='epoch', y='val_accuracy', ax=axes[1, 1])
+    plt.show()
+
+
 if __name__ == '__main__':
     sns.set_style('whitegrid')
 
@@ -50,7 +63,9 @@ if __name__ == '__main__':
     # analyze_binary_classification(binary_result)
     # analyze_multiple_choice(mc_result)
 
-    # binary_result = {'original': load_obj('evaluated_result/original/binary_percent_result')}
-    # analyze_binary_classification(binary_result)
+    binary_result = {'lstm': load_obj('evaluated_result/lstm/binary_percent_result')}
+    analyze_binary_classification(binary_result)
     mc_result = {'lstm': load_obj('evaluated_result/lstm/mc_percent_result')}
     analyze_multiple_choice(mc_result)
+
+    analyze_history('lstm')

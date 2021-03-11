@@ -29,8 +29,8 @@ def save_hist(hist, version):
     with open(hist_json, mode='w') as f:
         hist_df.to_json(f)
 
-def load_hist(version):
-    with open(f'history{version}.json') as f:
+def load_hist(version) -> pd.DataFrame:
+    with open(f'history/{version}.json') as f:
         return pd.read_json(f)
 
 
